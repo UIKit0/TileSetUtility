@@ -3,49 +3,69 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.IO.Compression;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Xml;
 using Ionic.Zlib;
-using SimplePsd;
+using Photoshop;
+using TileSetUtility.Properties;
 
 namespace TileSetUtility
 {
-    //[DllImport("msvcrt.dll")]
-    public partial class TileSetUtilityForm : Form
+    [System.ComponentModel.DesignerCategory("")]
+    public class TileSetUtilityForm : Form
     {
-        #region Constructors
+        #region Private fields
 
-        public TileSetUtilityForm()
-        {
-            InitializeComponent();
+        //graphical interface
+        private TableLayoutPanel _tableLayoutPanel;
+        private FlowLayoutPanel _flowLayoutPanel;
+        private Button _browseButton;
+        private TextBox _pathTextBox;
+        private Button _generateButton;
+        private Label _tileNameLabel;
+        private TextBox _tileNameTextBox;
+        private Label _tileSizeLabel;
+        private NumericUpDown _tileSizeNumericUpDown;
+        private TextBox _xmlTextBox;
 
-            this.FileBrowser = new OpenFileDialog();
-            this.FileBrowser.Filter = "Bitmap file|*.bmp";
-        }
+        private string _psdFileName;
+        private string _pathName;
 
         #endregion
 
-        #region Attributes
+       #region Constructors
 
-        private OpenFileDialog _fileBrowser;
-        private string _savePath;
-        private Bitmap _sourceBitmap;
-        private List<Bitmap> _tileBitmaps;
+        public TileSetUtilityForm()
+        {
+            this.Load += new EventHandler(TileSetUtilityForm_Load);
+            Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
+
+            this._tableLayoutPanel = new TableLayoutPanel();
+            this._flowLayoutPanel = new FlowLayoutPanel();
+            this._browseButton = new Button();
+            this._pathTextBox = new TextBox();
+            this._generateButton = new Button();
+            this._tileNameLabel = new Label();
+            this._tileNameTextBox = new TextBox();
+            this._tileSizeLabel = new Label();
+            this._tileSizeNumericUpDown = new NumericUpDown();
+            this._xmlTextBox = new TextBox();
+        }
 
         #endregion
 
         #region Methods
 
+
         void CreateTiles()
         {
+            /*
             this.SourceBitmap = new Bitmap(this.SavePath);
             this.TileBitmaps = new List<Bitmap>();
 
@@ -116,12 +136,9 @@ namespace TileSetUtility
                         }
                     }
                 }
-                PsdFile test = new PsdFile();
-                test.Load("test";
-                Layer test2 = new Layer(test);
-                LayerInfo test3 = new LayerInfo();
-                La
+                
             }
+             
             
             byte[] compressed = ZlibStream.CompressBuffer(stream.ToArray());
             string final = Convert.ToBase64String(compressed);
@@ -136,6 +153,16 @@ namespace TileSetUtility
             //write xml data
             string xmlFileName = Path.Combine(Path.GetDirectoryName(this.SavePath), this.nameTextBox.Text + "_xml.txt");
             xmlDocument.Save(xmlFileName);
+
+            PsdFile test = new PsdFile();
+
+            test.Load("C:\\Users\\mtvilim\\Documents\\FireAndIce-iOS\\Assets\\TileMaps\\PackThemBags\\test.psd");
+
+            Bitmap bmp = ImageDecoder.DecodeImage(test.Layers[1]);
+
+            bmp.Save("C:\\Users\\mtvilim\\Documents\\FireAndIce-iOS\\Assets\\TileMaps\\PackThemBags\\test.png", ImageFormat.Png);
+
+            */
         }
 
         [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
@@ -170,76 +197,113 @@ namespace TileSetUtility
 
         #region Event methods
 
+        void TileSetUtilityForm_Load(object sender, EventArgs e)
+        {
+            this.SuspendLayout();
+            this._flowLayoutPanel.SuspendLayout();
+
+            //set form properties
+            this.Text = "TileSetUtility";
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.ShowIcon = false;
+            this.MaximizeBox = false;
+            this.AutoSize = true;
+            this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+
+            //add controls
+            this.Controls.Add(this._tableLayoutPanel);
+            
+            //table layout panel
+            this._tableLayoutPanel.Controls.Add(this._flowLayoutPanel);
+
+            this._flowLayoutPanel.Controls.Add(this._browseButton);
+            this._flowLayoutPanel.Controls.Add(this._pathTextBox);
+            this._flowLayoutPanel.Controls.Add(this._tileNameLabel);
+            this._flowLayoutPanel.Controls.Add(this._tileNameTextBox);
+            this._flowLayoutPanel.Controls.Add(this._generateButton);
+            //break
+            this._flowLayoutPanel.SetFlowBreak(this._generateButton, true);
+            this._flowLayoutPanel.Controls.Add(this._tileSizeLabel);
+            this._flowLayoutPanel.Controls.Add(this._tileSizeNumericUpDown);
+            //break
+            this._tableLayoutPanel.Controls.Add(this._xmlTextBox);
+
+            //table layout panel
+            this._tableLayoutPanel.AutoSize = true;
+            this._tableLayoutPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this._tableLayoutPanel.GrowStyle = TableLayoutPanelGrowStyle.AddRows;
+
+            //flow layout panel
+            this._flowLayoutPanel.AutoSize = true;
+            this._flowLayoutPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+
+            //browse button
+            this._browseButton.Text = "Browse";
+            this._browseButton.Anchor = AnchorStyles.Left;
+            this._browseButton.Click += new EventHandler(this.browseButton_Click);
+
+            //path text box
+            this._pathTextBox.Anchor = AnchorStyles.Left;
+            this._pathTextBox.Width = 300;
+
+            //generate button
+            this._generateButton.Text = "Generate";
+            this._generateButton.Anchor = AnchorStyles.Left;
+            this._generateButton.Click += new EventHandler(this.generateButton_Click);
+
+            //tile name label
+            this._tileNameLabel.Text = "Tile name";
+            this._tileNameLabel.Anchor = AnchorStyles.Left;
+            this._tileNameLabel.AutoSize = true;
+            this._tileNameLabel.TextAlign = ContentAlignment.MiddleLeft;
+
+            //tile name textbox
+            this._tileNameTextBox.Anchor = AnchorStyles.Left;
+
+            //tile size label
+            this._tileSizeLabel.Text = "Tile size (px)";
+            this._tileSizeLabel.Anchor = AnchorStyles.Left;
+            this._tileSizeLabel.AutoSize = true;
+            this._tileSizeLabel.TextAlign = ContentAlignment.MiddleLeft;
+
+            //tile size numeric up down
+            this._tileSizeNumericUpDown.Anchor = AnchorStyles.Left;
+
+            //xml text box
+            this._xmlTextBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+          //  this._xmlTextBox.Dock = DockStyle.Fill;
+            this._xmlTextBox.ReadOnly = true;
+            this._xmlTextBox.Multiline = true;
+            this._xmlTextBox.AutoSize = true;
+            this._xmlTextBox.Text = "testdt\n\nksdfkdkfsdk";
+            this._xmlTextBox.Height = 400;
+
+            this.ResumeLayout();
+            this._flowLayoutPanel.ResumeLayout();
+        }
+
+        void Application_ApplicationExit(object sender, EventArgs e)
+        {
+            Settings.Default.Save();
+        }
+
         private void browseButton_Click(object sender, EventArgs e)
         {
-            DialogResult dialogResult = this.FileBrowser.ShowDialog();
-            if (dialogResult == DialogResult.OK)
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Filter = "Photoshop file|*.psd";
+
+            if (fileDialog.ShowDialog() == DialogResult.OK)
             {
-                this.SavePath = this.FileBrowser.FileName;
-                this.generateTilesButton.Enabled = true;
+                this._psdFileName = fileDialog.FileName;
+                this._pathName = Path.GetDirectoryName(fileDialog.FileName);
             }
         }
 
-        private void generateTilesButton_Click(object sender, EventArgs e)
+        private void generateButton_Click(object sender, EventArgs e)
         {
             this.CreateTiles();
         }
 
         #endregion
-
-        #region Accessors
-
-        public OpenFileDialog FileBrowser
-        {
-            get
-            {
-                return this._fileBrowser;
-            }
-            set
-            {
-                this._fileBrowser = value;
-            }
-        }
-
-        public string SavePath
-        {
-            get
-            {
-                return this._savePath;
-            }
-            set
-            {
-                this.pathBox.Text = value;
-                this._savePath = value;
-            }
-        }
-
-        public Bitmap SourceBitmap
-        {
-            get
-            {
-                return this._sourceBitmap;
-            }
-            set
-            {
-                this._sourceBitmap = value;
-            }
-        }
-
-        public List<Bitmap> TileBitmaps
-        {
-            get
-            {
-                return this._tileBitmaps;
-            }
-            set
-            {
-                this._tileBitmaps = value;
-            }
-        }
-
-
-        #endregion
-
     }
 }

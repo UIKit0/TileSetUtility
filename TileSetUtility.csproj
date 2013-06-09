@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -36,9 +37,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>.\Ionic.Zlib.dll</HintPath>
     </Reference>
-    <Reference Include="PhotoShop, Version=2.3.0.25403, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\PhotoShop.dll</HintPath>
+    <Reference Include="PhotoshopDLL">
+      <HintPath>.\PhotoshopDLL.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,17 +52,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TileSetUtilityForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TileSetUtilityForm.Designer.cs">
-      <DependentUpon>TileSetUtilityForm.cs</DependentUpon>
-    </Compile>
+    <Compile Include="TileSetUtilityForm.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="TileSetUtilityForm.resx">
-      <DependentUpon>TileSetUtilityForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -86,9 +78,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Ionic.Zlib.dll" />
-    <Content Include="PhotoShop.dll" />
-    <Content Include="SimplePsd.dll" />
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
