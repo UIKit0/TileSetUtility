@@ -33,10 +33,11 @@ namespace TileSetUtility
         private Label _tileSizeLabel;
         private NumericUpDown _tileSizeNumericUpDown;
         private TextBox _xmlTextBox;
-        
+        private StatusStrip _statusStrip;
+
         #endregion
 
-          #region Constructors
+        #region Constructors
 
         public TileSetUtilityForm()
         {
@@ -53,37 +54,62 @@ namespace TileSetUtility
             this._tileSizeLabel = new Label();
             this._tileSizeNumericUpDown = new NumericUpDown();
             this._xmlTextBox = new TextBox();
-
-            this.UpdateGenerateEnable();
+            this._statusStrip = new StatusStrip();
         }
 
         #endregion
 
         #region Methods
     
-        void CreateTiles()
+        void GenerateTiles()
         {
-            /*
-            this.SourceBitmap = new Bitmap(this.SavePath);
-            this.TileBitmaps = new List<Bitmap>();
+            string psdPath = Path.GetDirectoryName(this._pathTextBox.Text);
+            PsdFile psdFile = new PsdFile();
+            psdFile.Load(this._pathTextBox.Text);
 
-            Size mapSize = this.SourceBitmap.Size;
-            Rectangle tileArea = new Rectangle(0, 0, 32, 32);
-            
-            //create blank tile
-            Bitmap blankTile = new Bitmap(tileArea.Width, tileArea.Height);
-            using (Graphics gfx = Graphics.FromImage(blankTile))
-            using (SolidBrush brush = new SolidBrush(Color.FromArgb(248, 18, 234)))
+            List<Bitmap> uniqueTiles = new List<Bitmap>();
+            Size tileSize = new Size((int)this._tileSizeNumericUpDown.Value, (int)this._tileSizeNumericUpDown.Value);
+
+            foreach (Layer psdLayer in psdFile.Layers)
             {
-                gfx.FillRectangle(brush, 0, 0, tileArea.Width, tileArea.Height);
-                blankTile.MakeTransparent(Color.FromArgb(248, 18, 234));
+                Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
+                for (int yCoordinate = 0; yCoordinate <= layerBitmap.Height - tileSize.Height; yCoordinate += tileSize.Height)
+                {
+                    for (int xCoordinate = 0; xCoordinate <= layerBitmap.Width - tileSize.Width; xCoordinate += tileSize.Width)
+                    {
+                        Rectangle tileRectangle = new Rectangle(xCoordinate, yCoordinate, tileSize.Width, tileSize.Height);
+                        Bitmap newTile = layerBitmap.Clone(tileRectangle, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                        
+                        foreach (Bitmap existingTile in uniqueTiles)
+                        {
+                            if (!this.CompareBitmapEquality(newTile, existingTile))
+                            {
+                                uniqueTiles.Add(newTile);
+                            }
+                        }
+                    }
+                }
             }
-            
-            XmlDocument xmlDocument = new XmlDocument();
 
-            XmlElement dataNode = xmlDocument.CreateElement("data");
-            xmlDocument.AppendChild(dataNode);
-            
+            foreach (Layer psdLayer in psdFile.Layers)
+            {
+                XmlDocument xmlDocument = new XmlDocument();
+                XmlElement layerNode = xmlDocument.CreateElement("layer");
+                xmlDocument.AppendChild(layerNode);
+                layerNode.SetAttribute("name", psdLayer.Name);
+                layerNode.SetAttribute("width", ((int)(psdLayer.Rect.Width / tileSize.Width)).ToString());
+                layerNode.SetAttribute("height", ((int)(psdLayer.Rect.Height / tileSize.Height)).ToString());
+
+                XmlElement dataNode = xmlDocument.CreateElement("data");
+                layerNode.AppendChild(dataNode);
+                dataNode.SetAttribute("encoding", "base64");
+                dataNode.SetAttribute("compression", "zlib");
+
+                Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
+
+
+            }
+                        
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
 
@@ -159,34 +185,32 @@ namespace TileSetUtility
             Bitmap bmp = ImageDecoder.DecodeImage(test.Layers[1]);
 
             bmp.Save("C:\\Users\\mtvilim\\Documents\\FireAndIce-iOS\\Assets\\TileMaps\\PackThemBags\\test.png", ImageFormat.Png);
-
-            */
         }
 
         [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern int memcmp(IntPtr b1, IntPtr b2, long count);
-        public static bool CompareMemCmp(Bitmap b1, Bitmap b2)
+        private static extern int memcmp(IntPtr bitmap1, IntPtr bitmap2, long count);
+        protected bool CompareBitmapEquality(Bitmap bitmap1, Bitmap bitmap2)
         {
-            if ((b1 == null) != (b2 == null)) return false;
-            if (b1.Size != b2.Size) return false;
+            if ((bitmap1 == null) != (bitmap2 == null)) return false;
+            if (bitmap1.Size != bitmap2.Size) return false;
 
-            var bd1 = b1.LockBits(new Rectangle(new Point(0, 0), b1.Size),  ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            var bd2 = b2.LockBits(new Rectangle(new Point(0, 0), b2.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            BitmapData firstBitmapData = bitmap1.LockBits(new Rectangle(new Point(0, 0), bitmap1.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            BitmapData secondBitmapData = bitmap2.LockBits(new Rectangle(new Point(0, 0), bitmap2.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 
             try
             {
-                IntPtr bd1scan0 = bd1.Scan0;
-                IntPtr bd2scan0 = bd2.Scan0;
+                IntPtr bitmapData1Scan0 = firstBitmapData.Scan0;
+                IntPtr bitmapData2Scan0 = secondBitmapData.Scan0;
 
-                int stride = bd1.Stride;
-                int len = stride * b1.Height;
+                int stride = firstBitmapData.Stride;
+                int len = stride * bitmap1.Height;
 
-                return memcmp(bd1scan0, bd2scan0, len) == 0;
+                return memcmp(bitmapData1Scan0, bitmapData2Scan0, len) == 0;
             }
             finally
             {
-                b1.UnlockBits(bd1);
-                b2.UnlockBits(bd2);
+                bitmap1.UnlockBits(firstBitmapData);
+                bitmap2.UnlockBits(secondBitmapData);
             }
         }
 
@@ -194,7 +218,6 @@ namespace TileSetUtility
         {
             bool enableGenerate = !String.IsNullOrEmpty(this._pathTextBox.Text) && !String.IsNullOrEmpty(this._tilePrefixTextBox.Text);
             this._generateButton.Enabled = enableGenerate;
-
         }
 
         #endregion
@@ -247,10 +270,11 @@ namespace TileSetUtility
             this._browseButton.Click += new EventHandler(this.BrowseButton_Click);
 
             //path text box
+            this._pathTextBox.TextChanged += new EventHandler(this.PathTextBox_TextChanged);
             this._pathTextBox.ReadOnly = true;
             this._pathTextBox.Anchor = AnchorStyles.Left;
             this._pathTextBox.Width = 300;
-            this._pathTextBox.Text = Settings.Default.SavePath;
+            this._pathTextBox.Text = Settings.Default.PsdPath;
 
             //generate button
             this._generateButton.Text = "Generate";
@@ -264,7 +288,7 @@ namespace TileSetUtility
             this._tilePrefixLabel.TextAlign = ContentAlignment.MiddleLeft;
 
             //tile prefix textbox
-            this._tilePrefixTextBox.TextChanged += new EventHandler(TilePrefixTextBox_TextChanged);
+            this._tilePrefixTextBox.TextChanged += new EventHandler(this.TilePrefixTextBox_TextChanged);
             this._tilePrefixTextBox.Anchor = AnchorStyles.Left;
             this._tilePrefixTextBox.Text = Settings.Default.TilePrefix;
 
@@ -277,6 +301,7 @@ namespace TileSetUtility
             //tile size numeric up down
             this._tileSizeNumericUpDown.Anchor = AnchorStyles.Left;
             this._tileSizeNumericUpDown.Value = Settings.Default.TileSize;
+            this._tileSizeNumericUpDown.Minimum = 1;
 
             //xml text box
             this._xmlTextBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -293,7 +318,6 @@ namespace TileSetUtility
 
         protected void TileSetUtilityForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-
             Settings.Default.Save();
         }
 
@@ -322,11 +346,12 @@ namespace TileSetUtility
         protected void TilePrefixTextBox_TextChanged(object sender, EventArgs e)
         {
             Settings.Default.TilePrefix = this._tilePrefixTextBox.Text;
+            this.UpdateGenerateEnable();
         }
 
         protected void PathTextBox_TextChanged(object sender, EventArgs e)
         {
-            Settings.Default.SavePath = Path.GetDirectoryName(this._pathTextBox.Text);
+            Settings.Default.PsdPath = this._pathTextBox.Text;
             this.UpdateGenerateEnable();
         }
 

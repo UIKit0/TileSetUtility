@@ -26,12 +26,12 @@ namespace TileSetUtility.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SavePath {
+        public string PsdPath {
             get {
-                return ((string)(this["SavePath"]));
+                return ((string)(this["PsdPath"]));
             }
             set {
-                this["SavePath"] = value;
+                this["PsdPath"] = value;
             }
         }
         
