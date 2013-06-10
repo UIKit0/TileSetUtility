@@ -5,11 +5,11 @@
     <Setting Name="SavePath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="TilePixelWidth" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="TileSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">32</Value>
     </Setting>
-    <Setting Name="TilePixelHeight" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="TilePrefix" Type="System.String" Scope="User">
+      <Value Profile="(Default)">TilePrefix</Value>
     </Setting>
   </Settings>
 </SettingsFile>

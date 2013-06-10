@@ -28,41 +28,39 @@ namespace TileSetUtility
         private Button _browseButton;
         private TextBox _pathTextBox;
         private Button _generateButton;
-        private Label _tileNameLabel;
-        private TextBox _tileNameTextBox;
+        private Label _tilePrefixLabel;
+        private TextBox _tilePrefixTextBox;
         private Label _tileSizeLabel;
         private NumericUpDown _tileSizeNumericUpDown;
         private TextBox _xmlTextBox;
-
-        private string _psdFileName;
-        private string _pathName;
-
+        
         #endregion
 
-       #region Constructors
+          #region Constructors
 
         public TileSetUtilityForm()
         {
             this.Load += new EventHandler(TileSetUtilityForm_Load);
-            Application.ApplicationExit += new EventHandler(Application_ApplicationExit);
+            this.FormClosing += new FormClosingEventHandler(TileSetUtilityForm_FormClosing);
 
             this._tableLayoutPanel = new TableLayoutPanel();
             this._flowLayoutPanel = new FlowLayoutPanel();
             this._browseButton = new Button();
             this._pathTextBox = new TextBox();
             this._generateButton = new Button();
-            this._tileNameLabel = new Label();
-            this._tileNameTextBox = new TextBox();
+            this._tilePrefixLabel = new Label();
+            this._tilePrefixTextBox = new TextBox();
             this._tileSizeLabel = new Label();
             this._tileSizeNumericUpDown = new NumericUpDown();
             this._xmlTextBox = new TextBox();
+
+            this.UpdateGenerateEnable();
         }
 
         #endregion
 
         #region Methods
-
-
+    
         void CreateTiles()
         {
             /*
@@ -167,7 +165,6 @@ namespace TileSetUtility
 
         [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
         private static extern int memcmp(IntPtr b1, IntPtr b2, long count);
-
         public static bool CompareMemCmp(Bitmap b1, Bitmap b2)
         {
             if ((b1 == null) != (b2 == null)) return false;
@@ -193,16 +190,24 @@ namespace TileSetUtility
             }
         }
 
+        private void UpdateGenerateEnable()
+        {
+            bool enableGenerate = !String.IsNullOrEmpty(this._pathTextBox.Text) && !String.IsNullOrEmpty(this._tilePrefixTextBox.Text);
+            this._generateButton.Enabled = enableGenerate;
+
+        }
+
         #endregion
 
         #region Event methods
 
-        void TileSetUtilityForm_Load(object sender, EventArgs e)
+        protected void TileSetUtilityForm_Load(object sender, EventArgs e)
         {
             this.SuspendLayout();
+            this._tableLayoutPanel.SuspendLayout();
             this._flowLayoutPanel.SuspendLayout();
 
-            //set form properties
+            //form
             this.Text = "TileSetUtility";
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.ShowIcon = false;
@@ -216,16 +221,15 @@ namespace TileSetUtility
             //table layout panel
             this._tableLayoutPanel.Controls.Add(this._flowLayoutPanel);
 
+            //flow layout panel
             this._flowLayoutPanel.Controls.Add(this._browseButton);
             this._flowLayoutPanel.Controls.Add(this._pathTextBox);
-            this._flowLayoutPanel.Controls.Add(this._tileNameLabel);
-            this._flowLayoutPanel.Controls.Add(this._tileNameTextBox);
+            this._flowLayoutPanel.Controls.Add(this._tilePrefixLabel);
+            this._flowLayoutPanel.Controls.Add(this._tilePrefixTextBox);
             this._flowLayoutPanel.Controls.Add(this._generateButton);
-            //break
             this._flowLayoutPanel.SetFlowBreak(this._generateButton, true);
             this._flowLayoutPanel.Controls.Add(this._tileSizeLabel);
             this._flowLayoutPanel.Controls.Add(this._tileSizeNumericUpDown);
-            //break
             this._tableLayoutPanel.Controls.Add(this._xmlTextBox);
 
             //table layout panel
@@ -240,25 +244,29 @@ namespace TileSetUtility
             //browse button
             this._browseButton.Text = "Browse";
             this._browseButton.Anchor = AnchorStyles.Left;
-            this._browseButton.Click += new EventHandler(this.browseButton_Click);
+            this._browseButton.Click += new EventHandler(this.BrowseButton_Click);
 
             //path text box
+            this._pathTextBox.ReadOnly = true;
             this._pathTextBox.Anchor = AnchorStyles.Left;
             this._pathTextBox.Width = 300;
+            this._pathTextBox.Text = Settings.Default.SavePath;
 
             //generate button
             this._generateButton.Text = "Generate";
             this._generateButton.Anchor = AnchorStyles.Left;
-            this._generateButton.Click += new EventHandler(this.generateButton_Click);
+            this._generateButton.Click += new EventHandler(this.GenerateButton_Click);
 
-            //tile name label
-            this._tileNameLabel.Text = "Tile name";
-            this._tileNameLabel.Anchor = AnchorStyles.Left;
-            this._tileNameLabel.AutoSize = true;
-            this._tileNameLabel.TextAlign = ContentAlignment.MiddleLeft;
+            //tile prefix label
+            this._tilePrefixLabel.Text = "Tile prefix";
+            this._tilePrefixLabel.Anchor = AnchorStyles.Left;
+            this._tilePrefixLabel.AutoSize = true;
+            this._tilePrefixLabel.TextAlign = ContentAlignment.MiddleLeft;
 
-            //tile name textbox
-            this._tileNameTextBox.Anchor = AnchorStyles.Left;
+            //tile prefix textbox
+            this._tilePrefixTextBox.TextChanged += new EventHandler(TilePrefixTextBox_TextChanged);
+            this._tilePrefixTextBox.Anchor = AnchorStyles.Left;
+            this._tilePrefixTextBox.Text = Settings.Default.TilePrefix;
 
             //tile size label
             this._tileSizeLabel.Text = "Tile size (px)";
@@ -268,40 +276,58 @@ namespace TileSetUtility
 
             //tile size numeric up down
             this._tileSizeNumericUpDown.Anchor = AnchorStyles.Left;
+            this._tileSizeNumericUpDown.Value = Settings.Default.TileSize;
 
             //xml text box
             this._xmlTextBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-          //  this._xmlTextBox.Dock = DockStyle.Fill;
+            this._xmlTextBox.Dock = DockStyle.Top;
             this._xmlTextBox.ReadOnly = true;
             this._xmlTextBox.Multiline = true;
-            this._xmlTextBox.AutoSize = true;
-            this._xmlTextBox.Text = "testdt\n\nksdfkdkfsdk";
-            this._xmlTextBox.Height = 400;
+            this._xmlTextBox.MaximumSize = new Size(Int32.MaxValue, 500);
+            this._xmlTextBox.Visible = false;
 
             this.ResumeLayout();
+            this._tableLayoutPanel.ResumeLayout();
             this._flowLayoutPanel.ResumeLayout();
         }
 
-        void Application_ApplicationExit(object sender, EventArgs e)
+        protected void TileSetUtilityForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+
             Settings.Default.Save();
         }
 
-        private void browseButton_Click(object sender, EventArgs e)
+        protected void BrowseButton_Click(object sender, EventArgs e)
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.Filter = "Photoshop file|*.psd";
 
             if (fileDialog.ShowDialog() == DialogResult.OK)
             {
-                this._psdFileName = fileDialog.FileName;
-                this._pathName = Path.GetDirectoryName(fileDialog.FileName);
+                this._pathTextBox.Text = fileDialog.FileName;
             }
         }
 
-        private void generateButton_Click(object sender, EventArgs e)
+        protected void GenerateButton_Click(object sender, EventArgs e)
         {
             this.CreateTiles();
+            Debug.WriteLine(this._tilePrefixTextBox.Text);
+        }
+
+        protected void TileSizeNumericUpDown_ValueChanged(object sender, EventArgs e)
+        {
+            Settings.Default.TileSize = (int)this._tileSizeNumericUpDown.Value;
+        }
+
+        protected void TilePrefixTextBox_TextChanged(object sender, EventArgs e)
+        {
+            Settings.Default.TilePrefix = this._tilePrefixTextBox.Text;
+        }
+
+        protected void PathTextBox_TextChanged(object sender, EventArgs e)
+        {
+            Settings.Default.SavePath = Path.GetDirectoryName(this._pathTextBox.Text);
+            this.UpdateGenerateEnable();
         }
 
         #endregion

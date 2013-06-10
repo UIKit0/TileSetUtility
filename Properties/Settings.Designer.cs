@@ -37,24 +37,25 @@ namespace TileSetUtility.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        public int TilePixelWidth {
+        [global::System.Configuration.DefaultSettingValueAttribute("32")]
+        public int TileSize {
             get {
-                return ((int)(this["TilePixelWidth"]));
+                return ((int)(this["TileSize"]));
             }
             set {
-                this["TilePixelWidth"] = value;
+                this["TileSize"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string TilePixelHeight {
+        [global::System.Configuration.DefaultSettingValueAttribute("TilePrefix")]
+        public string TilePrefix {
             get {
-                return ((string)(this["TilePixelHeight"]));
+                return ((string)(this["TilePrefix"]));
             }
             set {
-                this["TilePixelHeight"] = value;
+                this["TilePrefix"] = value;
             }
         }
     }
