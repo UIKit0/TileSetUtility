@@ -11,5 +11,8 @@
     <Setting Name="TilePrefix" Type="System.String" Scope="User">
       <Value Profile="(Default)">TilePrefix</Value>
     </Setting>
+    <Setting Name="XmlData" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -58,5 +58,17 @@ namespace TileSetUtility.Properties {
                 this["TilePrefix"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string XmlData {
+            get {
+                return ((string)(this["XmlData"]));
+            }
+            set {
+                this["XmlData"] = value;
+            }
+        }
     }
 }

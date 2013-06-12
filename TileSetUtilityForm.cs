@@ -60,7 +60,7 @@ namespace TileSetUtility
         #endregion
 
         #region Methods
-    
+
         void GenerateTiles()
         {
             string psdPath = Path.GetDirectoryName(this._pathTextBox.Text);
@@ -70,6 +70,16 @@ namespace TileSetUtility
             List<Bitmap> uniqueTiles = new List<Bitmap>();
             Size tileSize = new Size((int)this._tileSizeNumericUpDown.Value, (int)this._tileSizeNumericUpDown.Value);
 
+            //create transparent tile for comparison when iterating over photoshop layers
+            Bitmap transparentBmp = new Bitmap(tileSize.Width, tileSize.Height, PixelFormat.Format32bppPArgb);
+            using (Graphics g = Graphics.FromImage(transparentBmp))
+            {
+                g.Clear(Color.FromArgb(0, Color.White));
+            }
+
+            #region find unique tiles
+
+            //scan through all layers of photoshop file to find unique, non-transparent tiles
             foreach (Layer psdLayer in psdFile.Layers)
             {
                 Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
@@ -79,10 +89,21 @@ namespace TileSetUtility
                     {
                         Rectangle tileRectangle = new Rectangle(xCoordinate, yCoordinate, tileSize.Width, tileSize.Height);
                         Bitmap newTile = layerBitmap.Clone(tileRectangle, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                        
-                        foreach (Bitmap existingTile in uniqueTiles)
+                        //discard tile if it is transparent
+                        if (!this.CompareBitmapEquality(newTile, transparentBmp))
                         {
-                            if (!this.CompareBitmapEquality(newTile, existingTile))
+                            //check if new tile has already been added to unique tile collection
+                            bool tileExists = false;
+                            foreach (Bitmap existingTile in uniqueTiles)
+                            {
+                                if (this.CompareBitmapEquality(newTile, existingTile))
+                                {
+                                    tileExists = true;
+                                    break;
+                                }
+                            }
+                            //add tile if it has not already been added
+                            if (!tileExists)
                             {
                                 uniqueTiles.Add(newTile);
                             }
@@ -91,100 +112,77 @@ namespace TileSetUtility
                 }
             }
 
-            foreach (Layer psdLayer in psdFile.Layers)
+            #endregion
+
+            #region write tiles and map data
+
+            //create xml document for storing map meta data
+            XmlDocument xmlDocument = new XmlDocument();
+            XmlElement mapNode = xmlDocument.CreateElement("map");
+            xmlDocument.AppendChild(mapNode);
+
+            using (MemoryStream stream = new MemoryStream())
             {
-                XmlDocument xmlDocument = new XmlDocument();
-                XmlElement layerNode = xmlDocument.CreateElement("layer");
-                xmlDocument.AppendChild(layerNode);
-                layerNode.SetAttribute("name", psdLayer.Name);
-                layerNode.SetAttribute("width", ((int)(psdLayer.Rect.Width / tileSize.Width)).ToString());
-                layerNode.SetAttribute("height", ((int)(psdLayer.Rect.Height / tileSize.Height)).ToString());
+                BinaryWriter writer = new BinaryWriter(stream);
 
-                XmlElement dataNode = xmlDocument.CreateElement("data");
-                layerNode.AppendChild(dataNode);
-                dataNode.SetAttribute("encoding", "base64");
-                dataNode.SetAttribute("compression", "zlib");
+                //create folder for tiles
+                string tilePath = Path.Combine(psdPath, this._tilePrefixTextBox.Text + "Tiles");
+                Directory.CreateDirectory(tilePath);
 
-                Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
-
-
-            }
-                        
-            MemoryStream stream = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(stream);
-
-            int imageCount = 1;
-            for (int yCoordinate = 0; yCoordinate <= mapSize.Height - tileArea.Height; yCoordinate += tileArea.Width)
-            {
-                for (int xCoordinate = 0; xCoordinate <= mapSize.Width - tileArea.Width; xCoordinate += tileArea.Height)
+                foreach (Layer psdLayer in psdFile.Layers)
                 {
-                    Rectangle copyArea = new Rectangle(xCoordinate, yCoordinate, tileArea.Width, tileArea.Height);
+                    XmlElement layerNode = xmlDocument.CreateElement("layer");
+                    xmlDocument.DocumentElement.AppendChild(layerNode);
+                    layerNode.SetAttribute("name", psdLayer.Name);
+                    layerNode.SetAttribute("width", ((int)(psdLayer.Rect.Width / tileSize.Width)).ToString());
+                    layerNode.SetAttribute("height", ((int)(psdLayer.Rect.Height / tileSize.Height)).ToString());
 
-                    Bitmap tile = this.SourceBitmap.Clone(copyArea, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                    tile.MakeTransparent(Color.FromArgb(248, 18, 234));
+                    XmlElement dataNode = xmlDocument.CreateElement("data");
+                    layerNode.AppendChild(dataNode);
+                    dataNode.SetAttribute("encoding", "base64");
+                    dataNode.SetAttribute("compression", "zlib");
 
-                    XmlElement tileNode = xmlDocument.CreateElement("tile");
-                    dataNode.AppendChild(tileNode);
+                    Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
 
-                    if (CompareMemCmp(blankTile, tile) == true)
+                    for (int yCoordinate = 0; yCoordinate <= layerBitmap.Height - tileSize.Height; yCoordinate += tileSize.Height)
                     {
-                        tileNode.SetAttribute("gid", "0");
-                        writer.Write(0);
-                    }
-                    else
-                    {
-                        bool alreadyExists = false;
-                        foreach (Bitmap bitmap in this.TileBitmaps)
+                        for (int xCoordinate = 0; xCoordinate <= layerBitmap.Width - tileSize.Width; xCoordinate += tileSize.Width)
                         {
-                            if (CompareMemCmp(bitmap, tile) == true)
+                            Rectangle tileRectangle = new Rectangle(xCoordinate, yCoordinate, tileSize.Width, tileSize.Height);
+                            Bitmap tile = layerBitmap.Clone(tileRectangle, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                            for (int i = 0; i < uniqueTiles.Count; i++)
                             {
-                                alreadyExists = true;
-
-                                tileNode.SetAttribute("gid", (this.TileBitmaps.IndexOf(bitmap) + 1).ToString());
-                                writer.Write(this.TileBitmaps.IndexOf(bitmap) + 1);
-                                break;
+                                //write tile index to layer byte stream for encoding
+                                if (this.CompareBitmapEquality(tile, uniqueTiles[i]))
+                                {
+                                    //empty tiles in .tmx format are encoded with 0
+                                    writer.Write(0);
+                                }
+                                else
+                                {
+                                    //tiles in .tmx tilesets maps are referenced reading from left to right, top to bottom starting from 1
+                                    int tileIndex = i + 1;
+                                    writer.Write(tileIndex);
+                                    //save tile
+                                    uniqueTiles[i].Save(Path.Combine(tilePath, tileIndex.ToString("D3")) + ".png", ImageFormat.Png);
+                                }
                             }
-                        }
-                        if (alreadyExists == false)
-                        {
-                            this.TileBitmaps.Add(tile);
 
-                            tileNode.SetAttribute("gid", (this.TileBitmaps.IndexOf(tile) + 1).ToString());
-                            writer.Write(this.TileBitmaps.IndexOf(tile) + 1);
+                            //compress array of integer tileset ids for storage as text in .tmx file
+                            byte[] compressedLayerData = ZlibStream.CompressBuffer(stream.ToArray());
+                            string textLayerData = Convert.ToBase64String(compressedLayerData);
 
-                            string fullSavePath = Path.Combine(Path.GetDirectoryName(this.SavePath), this.nameTextBox.Text + imageCount.ToString("D3") + ".png");
-
-                            tile.Save(fullSavePath, System.Drawing.Imaging.ImageFormat.Png);
-
-                            imageCount++;
+                            XmlText layerDataXml = xmlDocument.CreateTextNode(textLayerData);
+                            dataNode.AppendChild(layerDataXml);
                         }
                     }
                 }
-                
             }
-             
-            
-            byte[] compressed = ZlibStream.CompressBuffer(stream.ToArray());
-            string final = Convert.ToBase64String(compressed);
+            _xmlTextBox.Text = xmlDocument.InnerXml;
 
-            string zlibFileName = Path.Combine(Path.GetDirectoryName(this.SavePath), this.nameTextBox.Text + "_zlib.txt");
+            #endregion
 
-            using (StreamWriter outfile = new StreamWriter(zlibFileName))
-            {
-                outfile.Write(final);
-            }
-            
-            //write xml data
-            string xmlFileName = Path.Combine(Path.GetDirectoryName(this.SavePath), this.nameTextBox.Text + "_xml.txt");
-            xmlDocument.Save(xmlFileName);
-
-            PsdFile test = new PsdFile();
-
-            test.Load("C:\\Users\\mtvilim\\Documents\\FireAndIce-iOS\\Assets\\TileMaps\\PackThemBags\\test.psd");
-
-            Bitmap bmp = ImageDecoder.DecodeImage(test.Layers[1]);
-
-            bmp.Save("C:\\Users\\mtvilim\\Documents\\FireAndIce-iOS\\Assets\\TileMaps\\PackThemBags\\test.png", ImageFormat.Png);
         }
 
         [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
@@ -238,23 +236,6 @@ namespace TileSetUtility
             this.AutoSize = true;
             this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
-            //add controls
-            this.Controls.Add(this._tableLayoutPanel);
-            
-            //table layout panel
-            this._tableLayoutPanel.Controls.Add(this._flowLayoutPanel);
-
-            //flow layout panel
-            this._flowLayoutPanel.Controls.Add(this._browseButton);
-            this._flowLayoutPanel.Controls.Add(this._pathTextBox);
-            this._flowLayoutPanel.Controls.Add(this._tilePrefixLabel);
-            this._flowLayoutPanel.Controls.Add(this._tilePrefixTextBox);
-            this._flowLayoutPanel.Controls.Add(this._generateButton);
-            this._flowLayoutPanel.SetFlowBreak(this._generateButton, true);
-            this._flowLayoutPanel.Controls.Add(this._tileSizeLabel);
-            this._flowLayoutPanel.Controls.Add(this._tileSizeNumericUpDown);
-            this._tableLayoutPanel.Controls.Add(this._xmlTextBox);
-
             //table layout panel
             this._tableLayoutPanel.AutoSize = true;
             this._tableLayoutPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -304,12 +285,32 @@ namespace TileSetUtility
             this._tileSizeNumericUpDown.Minimum = 1;
 
             //xml text box
+            this._xmlTextBox.TextChanged += new EventHandler(XmlTextBox_TextChange);
             this._xmlTextBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
             this._xmlTextBox.Dock = DockStyle.Top;
             this._xmlTextBox.ReadOnly = true;
             this._xmlTextBox.Multiline = true;
-            this._xmlTextBox.MaximumSize = new Size(Int32.MaxValue, 500);
-            this._xmlTextBox.Visible = false;
+            this._xmlTextBox.ScrollBars = ScrollBars.Both;
+            this._xmlTextBox.Height = 300;
+            this._xmlTextBox.WordWrap = false;
+            this._xmlTextBox.Text = Settings.Default.XmlData;
+
+            //add controls
+            this.Controls.Add(this._tableLayoutPanel);
+
+            //table layout panel
+            this._tableLayoutPanel.Controls.Add(this._flowLayoutPanel);
+
+            //flow layout panel
+            this._flowLayoutPanel.Controls.Add(this._browseButton);
+            this._flowLayoutPanel.Controls.Add(this._pathTextBox);
+            this._flowLayoutPanel.Controls.Add(this._tilePrefixLabel);
+            this._flowLayoutPanel.Controls.Add(this._tilePrefixTextBox);
+            this._flowLayoutPanel.Controls.Add(this._generateButton);
+            this._flowLayoutPanel.SetFlowBreak(this._generateButton, true);
+            this._flowLayoutPanel.Controls.Add(this._tileSizeLabel);
+            this._flowLayoutPanel.Controls.Add(this._tileSizeNumericUpDown);
+            this._tableLayoutPanel.Controls.Add(this._xmlTextBox);
 
             this.ResumeLayout();
             this._tableLayoutPanel.ResumeLayout();
@@ -334,7 +335,7 @@ namespace TileSetUtility
 
         protected void GenerateButton_Click(object sender, EventArgs e)
         {
-            this.CreateTiles();
+            this.GenerateTiles();
             Debug.WriteLine(this._tilePrefixTextBox.Text);
         }
 
@@ -353,6 +354,11 @@ namespace TileSetUtility
         {
             Settings.Default.PsdPath = this._pathTextBox.Text;
             this.UpdateGenerateEnable();
+        }
+
+        protected void XmlTextBox_TextChange(object sender, EventArgs e)
+        {
+            Settings.Default.XmlData = this._xmlTextBox.Text;
         }
 
         #endregion
