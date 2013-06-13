@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Diagnostics;
@@ -32,8 +33,11 @@ namespace TileSetUtility
         private TextBox _tilePrefixTextBox;
         private Label _tileSizeLabel;
         private NumericUpDown _tileSizeNumericUpDown;
-        private TextBox _xmlTextBox;
         private StatusStrip _statusStrip;
+        private ToolStripProgressBar _progressBar;
+        private ToolStripLabel _statusLabel;
+
+        private List<Bitmap> _uniqueTiles;
 
         #endregion
 
@@ -41,6 +45,8 @@ namespace TileSetUtility
 
         public TileSetUtilityForm()
         {
+            this._uniqueTiles = new List<Bitmap>();
+
             this.Load += new EventHandler(TileSetUtilityForm_Load);
             this.FormClosing += new FormClosingEventHandler(TileSetUtilityForm_FormClosing);
 
@@ -53,32 +59,27 @@ namespace TileSetUtility
             this._tilePrefixTextBox = new TextBox();
             this._tileSizeLabel = new Label();
             this._tileSizeNumericUpDown = new NumericUpDown();
-            this._xmlTextBox = new TextBox();
             this._statusStrip = new StatusStrip();
+            this._progressBar = new ToolStripProgressBar();
+            this._statusLabel = new ToolStripLabel();
         }
 
         #endregion
 
         #region Methods
 
-        void GenerateTiles()
+        private void GenerateTiles()
         {
-            string psdPath = Path.GetDirectoryName(this._pathTextBox.Text);
             PsdFile psdFile = new PsdFile();
             psdFile.Load(this._pathTextBox.Text);
-
-            List<Bitmap> uniqueTiles = new List<Bitmap>();
             Size tileSize = new Size((int)this._tileSizeNumericUpDown.Value, (int)this._tileSizeNumericUpDown.Value);
 
-            //create transparent tile for comparison when iterating over photoshop layers
-            Bitmap transparentBmp = new Bitmap(tileSize.Width, tileSize.Height, PixelFormat.Format32bppPArgb);
-            using (Graphics g = Graphics.FromImage(transparentBmp))
-            {
-                g.Clear(Color.FromArgb(0, Color.White));
-            }
+            this.FindUniqueTiles(psdFile, tileSize);
+            this.WriteMapDataAndTiles(psdFile, tileSize);
+        }
 
-            #region find unique tiles
-
+        private void FindUniqueTiles(PsdFile psdFile, Size tileSize)
+        {
             //scan through all layers of photoshop file to find unique, non-transparent tiles
             foreach (Layer psdLayer in psdFile.Layers)
             {
@@ -88,15 +89,21 @@ namespace TileSetUtility
                     for (int xCoordinate = 0; xCoordinate <= layerBitmap.Width - tileSize.Width; xCoordinate += tileSize.Width)
                     {
                         Rectangle tileRectangle = new Rectangle(xCoordinate, yCoordinate, tileSize.Width, tileSize.Height);
-                        Bitmap newTile = layerBitmap.Clone(tileRectangle, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                        Bitmap newTile = new Bitmap(tileSize.Width, tileSize.Height);
+                        using (Graphics g = Graphics.FromImage(newTile))
+                        {
+                            g.DrawImage(layerBitmap, 0, 0, tileRectangle, GraphicsUnit.Pixel);
+                        }
+
                         //discard tile if it is transparent
-                        if (!this.CompareBitmapEquality(newTile, transparentBmp))
+                        if (!this.IsBitmapTransparent(newTile))
                         {
                             //check if new tile has already been added to unique tile collection
                             bool tileExists = false;
-                            foreach (Bitmap existingTile in uniqueTiles)
+                            foreach (Bitmap existingTile in this._uniqueTiles)
                             {
-                                if (this.CompareBitmapEquality(newTile, existingTile))
+                                if (this.AreBitmapsEqual(newTile, existingTile))
                                 {
                                     tileExists = true;
                                     break;
@@ -105,21 +112,47 @@ namespace TileSetUtility
                             //add tile if it has not already been added
                             if (!tileExists)
                             {
-                                uniqueTiles.Add(newTile);
+                                this._uniqueTiles.Add(newTile);
                             }
                         }
                     }
                 }
             }
+        }
 
-            #endregion
-
-            #region write tiles and map data
-
+        private void WriteMapDataAndTiles(PsdFile psdFile, Size tileSize)
+        {
+            string psdPath = Path.GetDirectoryName(this._pathTextBox.Text);
+            Size psdSize = ImageDecoder.DecodeImage(psdFile).Size;
+            string tmxFilename = this._tilePrefixTextBox.Text + ".tmx";
+            string tilesetName = this._tilePrefixTextBox.Text + "Tiles";
+            string tilesetImageName = tilesetName + ".png";
+            
             //create xml document for storing map meta data
             XmlDocument xmlDocument = new XmlDocument();
-            XmlElement mapNode = xmlDocument.CreateElement("map");
-            xmlDocument.AppendChild(mapNode);
+            XmlDeclaration declarationNode = xmlDocument.CreateXmlDeclaration("1.0", "UTF-8", null);
+            xmlDocument.AppendChild(declarationNode);
+            //create map element
+            XmlElement mapElement = xmlDocument.CreateElement("map");
+            xmlDocument.AppendChild(mapElement);
+            mapElement.SetAttribute("version", "1.0");
+            mapElement.SetAttribute("orientation", "orthogonal");
+            mapElement.SetAttribute("width", (psdSize.Width / tileSize.Width).ToString());
+            mapElement.SetAttribute("height", (psdSize.Height / tileSize.Height).ToString());
+            mapElement.SetAttribute("tilewidth", tileSize.Width.ToString());
+            mapElement.SetAttribute("tileheight", tileSize.Height.ToString());
+            //create tileset element
+            XmlElement tilesetElement = xmlDocument.CreateElement("tileset");
+            mapElement.AppendChild(tilesetElement);
+            tilesetElement.SetAttribute("firstgid", "1");
+            tilesetElement.SetAttribute("name", tilesetName);
+            tilesetElement.SetAttribute("tilewidth", tileSize.Width.ToString());
+            tilesetElement.SetAttribute("tileheight", tileSize.Height.ToString());
+            tilesetElement.SetAttribute("spacing", "4");
+            tilesetElement.SetAttribute("margin", "3");
+            //create image element
+            XmlElement imageElement = xmlDocument.CreateElement("image");
+            imageElement.SetAttribute("source", tilesetImageName);
 
             using (MemoryStream stream = new MemoryStream())
             {
@@ -131,16 +164,16 @@ namespace TileSetUtility
 
                 foreach (Layer psdLayer in psdFile.Layers)
                 {
-                    XmlElement layerNode = xmlDocument.CreateElement("layer");
-                    xmlDocument.DocumentElement.AppendChild(layerNode);
-                    layerNode.SetAttribute("name", psdLayer.Name);
-                    layerNode.SetAttribute("width", ((int)(psdLayer.Rect.Width / tileSize.Width)).ToString());
-                    layerNode.SetAttribute("height", ((int)(psdLayer.Rect.Height / tileSize.Height)).ToString());
-
-                    XmlElement dataNode = xmlDocument.CreateElement("data");
-                    layerNode.AppendChild(dataNode);
-                    dataNode.SetAttribute("encoding", "base64");
-                    dataNode.SetAttribute("compression", "zlib");
+                    XmlElement layerElement = xmlDocument.CreateElement("layer");
+                    mapElement.AppendChild(layerElement);
+                    layerElement.SetAttribute("name", psdLayer.Name);
+                    layerElement.SetAttribute("width", (psdSize.Width / tileSize.Width).ToString());
+                    layerElement.SetAttribute("height", (psdSize.Height / tileSize.Height).ToString());
+                    
+                    XmlElement dataElement = xmlDocument.CreateElement("data");
+                    layerElement.AppendChild(dataElement);
+                    dataElement.SetAttribute("encoding", "base64");
+                    dataElement.SetAttribute("compression", "zlib");
 
                     Bitmap layerBitmap = ImageDecoder.DecodeImage(psdLayer);
 
@@ -149,23 +182,33 @@ namespace TileSetUtility
                         for (int xCoordinate = 0; xCoordinate <= layerBitmap.Width - tileSize.Width; xCoordinate += tileSize.Width)
                         {
                             Rectangle tileRectangle = new Rectangle(xCoordinate, yCoordinate, tileSize.Width, tileSize.Height);
-                            Bitmap tile = layerBitmap.Clone(tileRectangle, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-                            for (int i = 0; i < uniqueTiles.Count; i++)
+                            Bitmap tile = new Bitmap(tileSize.Width, tileSize.Height);
+                            using (Graphics g = Graphics.FromImage(tile))
+                            {
+                                g.DrawImage(layerBitmap, 0, 0, tileRectangle, GraphicsUnit.Pixel);
+                            }
+
+                            for (int i = 0; i < this._uniqueTiles.Count; i++)
                             {
                                 //write tile index to layer byte stream for encoding
-                                if (this.CompareBitmapEquality(tile, uniqueTiles[i]))
+                                if (this.IsBitmapTransparent(this._uniqueTiles[i]))
                                 {
-                                    //empty tiles in .tmx format are encoded with 0
+                                    //empty tiles in .tmx format are encoded with 0; ignore transparent tiles for faster rendering
                                     writer.Write(0);
                                 }
                                 else
                                 {
                                     //tiles in .tmx tilesets maps are referenced reading from left to right, top to bottom starting from 1
-                                    int tileIndex = i + 1;
-                                    writer.Write(tileIndex);
-                                    //save tile
-                                    uniqueTiles[i].Save(Path.Combine(tilePath, tileIndex.ToString("D3")) + ".png", ImageFormat.Png);
+                                    if (AreBitmapsEqual(tile, this._uniqueTiles[i]))
+                                    {
+                                        int tileIndex = i + 1;
+                                        writer.Write(tileIndex);
+
+                                        //calculate the number of leading zeros needed so tiles will be in order when sorted by name
+                                        int suffixLength = (int)Math.Floor(Math.Log10(this._uniqueTiles.Count) + 1);
+                                        this._uniqueTiles[i].Save(Path.Combine(tilePath, this._tilePrefixTextBox.Text + tileIndex.ToString("D" + suffixLength.ToString())) + ".png", ImageFormat.Png);
+                                    }
                                 }
                             }
 
@@ -174,20 +217,24 @@ namespace TileSetUtility
                             string textLayerData = Convert.ToBase64String(compressedLayerData);
 
                             XmlText layerDataXml = xmlDocument.CreateTextNode(textLayerData);
-                            dataNode.AppendChild(layerDataXml);
+                            dataElement.AppendChild(layerDataXml);
                         }
                     }
                 }
             }
-            _xmlTextBox.Text = xmlDocument.InnerXml;
 
-            #endregion
-
+            XmlWriterSettings writerSettings = new XmlWriterSettings();
+            
+            using (XmlTextWriter xmlWriter = new XmlTextWriter(Path.Combine(psdPath, tmxFilename), Encoding.UTF8))
+            {
+                xmlWriter.Formatting = Formatting.Indented;
+                xmlDocument.WriteTo(xmlWriter);
+            }
         }
 
         [DllImport("msvcrt.dll", CallingConvention=CallingConvention.Cdecl)]
         private static extern int memcmp(IntPtr bitmap1, IntPtr bitmap2, long count);
-        protected bool CompareBitmapEquality(Bitmap bitmap1, Bitmap bitmap2)
+        protected bool AreBitmapsEqual(Bitmap bitmap1, Bitmap bitmap2)
         {
             if ((bitmap1 == null) != (bitmap2 == null)) return false;
             if (bitmap1.Size != bitmap2.Size) return false;
@@ -212,6 +259,32 @@ namespace TileSetUtility
             }
         }
 
+        protected bool IsBitmapTransparent(Bitmap bitmap)
+        {
+            //assume the bitmap is transparent until a non-transparent pixel is found
+            bool isTransparent = true;
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(Point.Empty, bitmap.Size), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            //check alpha component of every pixel to see whether it is zero
+            unsafe
+            {
+                byte* bitmapDataScan0 = (byte*)bitmapData.Scan0;
+                int numberOfPixels = bitmap.Width * bitmap.Height;
+
+                for (int i = 0; i < numberOfPixels * 4; i += 4)
+                {
+                    if (bitmapDataScan0[i + 3] != 0)
+                    {
+                        isTransparent = false;
+                        break;
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bitmapData);
+            return isTransparent;
+        }
+
         private void UpdateGenerateEnable()
         {
             bool enableGenerate = !String.IsNullOrEmpty(this._pathTextBox.Text) && !String.IsNullOrEmpty(this._tilePrefixTextBox.Text);
@@ -229,9 +302,9 @@ namespace TileSetUtility
             this._flowLayoutPanel.SuspendLayout();
 
             //form
+            this.Icon = Resources.FireAndIceIcon;
             this.Text = "TileSetUtility";
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.ShowIcon = false;
             this.MaximizeBox = false;
             this.AutoSize = true;
             this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -280,26 +353,29 @@ namespace TileSetUtility
             this._tileSizeLabel.TextAlign = ContentAlignment.MiddleLeft;
 
             //tile size numeric up down
+            this._tileSizeNumericUpDown.ValueChanged += new EventHandler(TileSizeNumericUpDown_ValueChanged);
             this._tileSizeNumericUpDown.Anchor = AnchorStyles.Left;
             this._tileSizeNumericUpDown.Value = Settings.Default.TileSize;
+            this._tileSizeNumericUpDown.Maximum = 1000;
             this._tileSizeNumericUpDown.Minimum = 1;
 
-            //xml text box
-            this._xmlTextBox.TextChanged += new EventHandler(XmlTextBox_TextChange);
-            this._xmlTextBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            this._xmlTextBox.Dock = DockStyle.Top;
-            this._xmlTextBox.ReadOnly = true;
-            this._xmlTextBox.Multiline = true;
-            this._xmlTextBox.ScrollBars = ScrollBars.Both;
-            this._xmlTextBox.Height = 300;
-            this._xmlTextBox.WordWrap = false;
-            this._xmlTextBox.Text = Settings.Default.XmlData;
+            //status strip
+            this._statusStrip.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            this._statusStrip.ShowItemToolTips = true;
+            this._statusStrip.SizingGrip = false;
+            this._statusStrip.Items.Add(this._statusLabel);
+            this._statusStrip.Items.Add(this._progressBar);
+            
+            //status label
+            this._statusLabel.Text = "Ready";
 
             //add controls
             this.Controls.Add(this._tableLayoutPanel);
 
             //table layout panel
+            this._tableLayoutPanel.Margin = new Padding(0);
             this._tableLayoutPanel.Controls.Add(this._flowLayoutPanel);
+            this._tableLayoutPanel.Controls.Add(this._statusStrip);
 
             //flow layout panel
             this._flowLayoutPanel.Controls.Add(this._browseButton);
@@ -310,7 +386,6 @@ namespace TileSetUtility
             this._flowLayoutPanel.SetFlowBreak(this._generateButton, true);
             this._flowLayoutPanel.Controls.Add(this._tileSizeLabel);
             this._flowLayoutPanel.Controls.Add(this._tileSizeNumericUpDown);
-            this._tableLayoutPanel.Controls.Add(this._xmlTextBox);
 
             this.ResumeLayout();
             this._tableLayoutPanel.ResumeLayout();
@@ -336,7 +411,6 @@ namespace TileSetUtility
         protected void GenerateButton_Click(object sender, EventArgs e)
         {
             this.GenerateTiles();
-            Debug.WriteLine(this._tilePrefixTextBox.Text);
         }
 
         protected void TileSizeNumericUpDown_ValueChanged(object sender, EventArgs e)
@@ -354,11 +428,6 @@ namespace TileSetUtility
         {
             Settings.Default.PsdPath = this._pathTextBox.Text;
             this.UpdateGenerateEnable();
-        }
-
-        protected void XmlTextBox_TextChange(object sender, EventArgs e)
-        {
-            Settings.Default.XmlData = this._xmlTextBox.Text;
         }
 
         #endregion
