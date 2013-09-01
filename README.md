@@ -1,7 +1,7 @@
 TileSetUtility
 ==============
 
-tile map sprite sheet generator written with C#/.NET
+Tile map sprite sheet generator written with C#/.NET
 
 ![Tile map screenshot](/Documentation/tile_set_utility_screenshot.png)
 
