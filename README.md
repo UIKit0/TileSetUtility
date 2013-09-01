@@ -1,7 +1,7 @@
 TileSetUtility
 ==============
 
-TileSetUtility is a simple program used to automatically generate tile sets and map files for use in 2d side-scrolling games.
+TileSetUtility is a user-friendly utility that greatly simplifies the process of generating tile map sprite sheets for 2d side-scroller games.
 
 ![Tile map screenshot](/Documentation/tile_set_utility_screenshot.png)
 
