@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="100" height="41" tilewidth="32" tileheight="32">
+ <tileset firstgid="1" name="TileSetScreenshot" tilewidth="32" tileheight="32" spacing="4" margin="3">
+  <image source="TileSetScreenshot.png" width="1010" height="470"/>
+ </tileset>
+ <layer name="MainLevel" width="100" height="41">
+  <data encoding="base64" compression="zlib">
+   eJztmgVw3UYQhu/FSRywHTvQtE7TupwyM6XMzMwpc902ZWZmZmbGlCFl5roMLjO43H/n3Y72rU/SSfKj5O3MN6cDSXf3H0vGpLcc6JXh/poVWl3G+2t69JyRFr0zPqOmR3brA/qavBb1GZ9V0yObcZ+oF2Sxmh7R1g/0j4gfYAq1qOkRbgNBA2i0NCW4d5C9pxm02Oe0KH+jdXVYFpsQ9RgMhoChYBiYxDI8wTMmBZOBVjACTG5d6R+pwkba8Cw2oegh+8IUYErQZuOGm2RasE0FpgbTxLh8zf4sVu166L5ATAumS/icuHlC2/RgBtN97phY5g+udzmmu/pCGqO5osHiM8eMsq5Lkxkz5IOsEvXgsUfOmVzvcj5I2xe0zWSCvjWzCB+l0s0CZgWziTCpCWkxe8a8VIIeXP/c7mns4fp21Xva+cDXdL3PAeYEc4G5Hel5zTuP9cs1HTFvgnf3pB66PfkYaSHXQeS2maC+i1nv2lz1Ph+YHywAFjSFc4zely8EFjbB2otYJGEeekIPVz+OMx6zSYs2G1asupdzNb13UbAYWNyGjTb++4uw8Gbhl+utJRLmVesh5zY2vc9J6nftxXjMbkuY3zTGZWoS76W+yHMF7zV89xeu8Fbhz2JaD5lfNpd/WEK/nCdLbVwmmQfdF2mv4bu/CAtnfxbzHa+WzPieUpvsE8Uw1zlisfYfcswiaH0wOqO/1ObqEz1heg4vhR5yzOIy6XFXr9nj/KWypPtssqXA0mAZsCxYLiRdVJ9w6cHtWu9hl4/IS9R45VrvlHL9mcaSjFMrgBXBSmBlsApYFawWkt51th6lh2yT3JZXB2uANcFaYG0TtKF1wLpgPZ+CVolxHawfk24DsCHYCGwMNgGbgs3A5o70vn0jarzitrwF2BJsBbY2wb6R+tA2YIwp3zif1cLGJw7fFmyn0mwPdjB5LXYEO4GdwS5gV7Cbuo+12N3kz0eozvcAe5r088depvsZBMFr5nKvSZMaj0tRe7h2sDfYx143m8J9XLtI36LC5X362Q0i3b4m/XzuOoOohPOrNOazhxsL9gP72+tWlX6s454Rjvv0XpChuIn1vF0bjSEHmPg93IHgIBXu2t/pa3lfWNqDTU0PsiRzaznIYtWoB687DwGHmvDvdDU9SmP8Degw6/fdF5SKw8ER4EhwVMKyVaMeZKzJ0abyxq5jwLHgOHA8OCFBuapVD7JK6xfMieAkcDI4BZwKTvMsUzXrEfWPRzk5HZwBzgRngbPBOZ5lqmY9yCpRk3PBeeB8cAG4EFzkWZ5S6HExuARcCi4zwT74cnCFCc7V0prvuHUluMozbRauBteAa8F14Hpwg2dZiqkH/zN1I7gJ3AxuAbeC28Dt4A4TnKvRmeedKd7jowdpcRe42xRfE3kmI8/auf1FlTHse1TUeXVcPNk9Jvhn6l5wH7gfjAMPgAfBQ+Bh8Ah41OTPPB8Dj8c8W5rP3pC1eAI8afKa8Dkque3KL115luWK4+sxIm68CdrcU6Z7+4sqo0uPp8EzEXUQF0//8DwLngPPgxfAi+Al8DJ4Bbwq3NdMoM/r4A0T/c2GzOc7ndbiTQtpIs+yXGdbrrMsVxz7JeNUuaU/royu/0u4f7n6QFS8/Jf2LZPvB8Tb4B3wLugA74H3wQfgQxv2EfgYfAI+NflvNmFtyPe8RGvB4axJ3H/S7OozsDiX2t1nqtzsjyuj1oPaPvcvVx8Ii5fj0+cmaA+kRyf4AnwJvgJf27BvwLci7jvwPfgB/GjC21CS+UJrITXx5Sfwc4L0v4BfRbm4nB0hZaT55jdbtt9N8H1Q/7epv/UONO5vDeRGjU9d4A/wJ/gL/G3DOiwcx/6oNpR0vnBpUWz+Af+Kcv1HGc/l2yBd67Egh7heoM66fE30zgXtX6eryxXOU+OFy+OT7qedQgO65jGK2wzntUOEhfUTni/kdzpJHzynb668WhBUFh4HqEz1yFO/XL4N8lgty9gfcQPAQOvK6wbQaGkCg0CzSCPjJS1gcK4wH1S3XUKDLhXeIfLaKcI4r7qf6H81dF8dgucMzZVXC+J/h3OFEA==
+  </data>
+ </layer>
+ <layer name="MainDetail" width="100" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt2MdOAzEUheG5O1iygNAh9N57b6HXhyBvEHh9joUHrGHMZixFgv+Tju6MbxyNrpMskmUAAAAAAAAAAAAAAAD47zqUznY/BL50Ka12PwSAP6XbsqxHqSm9vvYp/cqAMqgMKcPKiDKq1O1z31ih7/aPKxP+fVDNpJ/1lDKtzATzdeuzypyfdb2k7/bPKwucRTJu1ovKkp9xPt/i570W6S+rrnAeSYW/Yb/Nt6y/qus1ZV3Z4FySy+cbCmdd7G/qekvZVnY4j+R2NdM9i6+F57GvemDxfajuUDM9svha/n1wjlVPLL4P1ZxqnmfKuXKhNOznWuhS91clr2lwLklca443yq1yp9zb99qDX3P/UT2qPinPyouV70M1r0rT11bhPqyu96a8R3r5dTPoAQAAIK0PVVsjxA==
+  </data>
+ </layer>
+ <layer name="ForegroundFar" width="100" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt0ckNgDAQBMF1ilzmzD8N9kMCCAmMqiLo0UQAAAAAAAAAAAAAAAAAAMAzuhLRl7cruAz5xfjzP6bcVxvZOGfn0kjrXWvu2xrZuGfn8fHWEx+BBCc=
+  </data>
+ </layer>
+ <layer name="ForegroundClose" width="100" height="41">
+  <data encoding="base64" compression="zlib">
+   eJzt0bkNgEAMRcGlUe6b/nO+RAdLhJiRXmgHdikAAAAAAAAAAAAAAAAAAADf1jaldKlv6ncMmR3T9GIHjzk3XNKatop77pk50pmuH//jBhj4BY4=
+  </data>
+ </layer>
+ <objectgroup name="CollisionMap" width="100" height="41" visible="0">
+  <object type="Ground" x="0" y="1088">
+   <polyline points="0,0 192,0 288,32 384,128 416,128 448,160 576,160 608,128 736,128 768,160 832,160 864,128 1056,128 1088,96 1152,64 1216,0 1408,-64 1472,-64 1664,0 1856,192 2112,192 2176,160 2400,-64 2464,0 3200,0"/>
+  </object>
+  <object type="LevelBoundary" x="3200" y="1088">
+   <polyline points="0,0 0,-1088"/>
+  </object>
+  <object type="Ground" x="1504" y="416">
+   <polyline points="0,0 64,-64 160,-64 192,-96 320,-96 384,-128 512,-128 576,-160 608,-192 672,-192 736,-224 768,-256"/>
+  </object>
+  <object type="Ground" x="74" y="609">
+   <polyline points="0,0 182,-1 214,31 278,63 516,64"/>
+  </object>
+  <object type="OneWayPlatform" x="0" y="384">
+   <polyline points="0,0 142,0"/>
+  </object>
+  <object type="OneWayPlatform" x="704" y="448">
+   <polyline points="0,0 -88,0"/>
+  </object>
+  <object type="OneWayPlatform" x="832" y="448">
+   <polyline points="0,0 -64,0"/>
+  </object>
+  <object type="OneWayPlatform" x="960" y="448">
+   <polyline points="0,0 -64,0"/>
+  </object>
+  <object type="OneWayPlatform" x="1088" y="448">
+   <polyline points="0,0 -64,0"/>
+  </object>
+  <object type="OneWayPlatform" x="1216" y="448">
+   <polyline points="0,0 -64,0"/>
+  </object>
+  <object type="OneWayPlatform" x="1280" y="448">
+   <polyline points="0,0 56,1"/>
+  </object>
+  <object type="OneWayPlatform" x="1296" y="545">
+   <polyline points="0,0 -94,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="1168" y="545">
+   <polyline points="0,0 -93,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="1040" y="545">
+   <polyline points="0,0 -94,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="911" y="545">
+   <polyline points="0,0 -92,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="785" y="545">
+   <polyline points="0,0 -138,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="2272" y="160">
+   <polyline points="0,0 120,0"/>
+  </object>
+  <object type="OneWayPlatform" x="1504" y="416">
+   <polyline points="0,0 -56,0"/>
+  </object>
+  <object type="OneWayPlatform" x="3200" y="160">
+   <polyline points="0,0 -472,0"/>
+  </object>
+  <object type="OneWayPlatform" x="2682" y="289">
+   <polyline points="0,0 -114,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="2580" y="417">
+   <polyline points="0,0 620,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="2521" y="417">
+   <polyline points="0,0 -111,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="2393" y="449">
+   <polyline points="0,0 -80,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="2297" y="513">
+   <polyline points="0,0 -80,0"/>
+  </object>
+  <object type="OneWayPlatform" x="2232" y="609">
+   <polyline points="0,0 -80,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="3056" y="706">
+   <polyline points="0,0 -1096,-2"/>
+  </object>
+  <object type="LevelBoundary" x="0" y="0">
+   <polyline points="0,0 0,1312"/>
+  </object>
+  <object type="OneWayPlatform" x="609" y="1168">
+   <polyline points="0,0 15,-15 110,-15 125,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="641" y="1102">
+   <polyline points="0,0 11,-12 52,-13 63,-1"/>
+  </object>
+  <object type="OneWayPlatform" x="896" y="1101">
+   <polyline points="0,0 11,-12 52,-12 63,2"/>
+  </object>
+  <object type="OneWayPlatform" x="865" y="1167">
+   <polyline points="0,0 12,-14 115,-14 126,-1"/>
+  </object>
+ </objectgroup>
+</map>
