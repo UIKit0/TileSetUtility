@@ -16,7 +16,7 @@ Screenshots
 -----------
 ### Sample sprite sheet output
 ![Tile set screenshot](/Documentation/tile_set_screenshot.png)
-### Sample tile map Photoshop file input
+### Sample [Photoshop file](/Documentation/tile_map_photoshop.psd)
 ![Tile map screenshot](/Documentation/tile_map_screenshot.png)
-### Sample generated [map file](/Documentation/tiled_map.tmx)
+### Sample [map file](/Documentation/tiled_map.tmx)
 ![Tiled screenshot](/Documentation/tiled_screenshot.png)
