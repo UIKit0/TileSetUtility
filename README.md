@@ -1,7 +1,7 @@
 TileSetUtility
 ==============
 
-TileSetUtility is a user-friendly utility that greatly simplifies the process of generating tile map sprite sheets for 2d side-scroller games.
+tile map sprite sheet generator written with C#/.NET
 
 ![Tile map screenshot](/Documentation/tile_set_utility_screenshot.png)
 
